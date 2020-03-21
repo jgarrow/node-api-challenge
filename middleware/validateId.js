@@ -3,14 +3,11 @@ const actions = require("../data/helpers/actionModel");
 
 const validateProjectId = async (req, res, next) => {
     const { id } = req.params;
-    console.log("id in validateProjectId: ", id);
-
     const projectsArray = await projects.get();
-    console.log("projectsArray: ", projectsArray);
+
     const projectIndex = projectsArray.findIndex(
         project => parseInt(project.id) === parseInt(id)
     );
-    console.log("projectIndex: ", projectIndex);
 
     if (projectIndex > -1) {
         req.project = projectsArray[projectIndex];
@@ -27,9 +24,6 @@ const validateActionId = async (req, res, next) => {
     const actionIndex = actionsArray.findIndex(
         action => parseInt(action.id) === parseInt(action_id)
     );
-    console.log("action_id: ", action_id);
-    console.log("actionsArray: ", actionsArray);
-    console.log("actionIndex: ", actionIndex);
 
     if (actionIndex > -1) {
         req.action = actionsArray[actionIndex];

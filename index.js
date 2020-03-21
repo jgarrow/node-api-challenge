@@ -12,26 +12,24 @@ I need this code, but don't know where, perhaps should make some middleware, don
 
 Go code!
 */
-
-const {
-    validateProjectId,
-    validateActionId
-} = require("./middleware/validateProjectId");
-// const validateActionId = require("./middleware/validateProjectId")
+const { validateProjectId } = require("./middleware/validateId");
 const express = require("express");
 const logger = require("morgan");
-// const cors = require("cors");
+const cors = require("cors");
 const projects = require("./data/helpers/projectModel");
-// const actionRoutes = require("./routes/actionRoutes");
-const actions = require("./data/helpers/actionModel");
+const actionRoutes = require("./routes/actionRoutes");
 
 const server = express();
 ("");
 const port = 5000;
 const baseUrl = "/";
 
+server.use(cors());
+server.use(
+    logger(":method :url :status :res[content-length] - :response-time ms")
+);
 server.use(express.json());
-// server.use(`${baseUrl}/actions`, actionRoutes);
+server.use(`${baseUrl}`, actionRoutes);
 
 server.get("/", (req, res) => {
     projects
@@ -120,123 +118,5 @@ server.delete("/:id", validateProjectId, (req, res) => {
                 .json({ errorMessage: `Error deleting project ${id}` })
         );
 });
-
-server.get("/:id/actions", validateProjectId, (req, res) => {
-    actions
-        .get()
-        .then(resp => res.status(200).send(resp))
-        .catch(err =>
-            res.status(500).json({ errorMessage: "Error retrieving actions" })
-        );
-});
-
-server.get(
-    "/:id/actions/:action_id",
-    validateProjectId,
-    validateActionId,
-    (req, res) => {
-        const { action_id } = req.params;
-
-        actions
-            .get(action_id)
-            .then(resp => res.status(200).send(resp))
-            .catch(err =>
-                res
-                    .status(500)
-                    .json({
-                        errorMessage: `Error retrieving action ${action_id}`
-                    })
-            );
-    }
-);
-
-server.post("/:id/actions", validateProjectId, (req, res) => {
-    const { id } = req.params;
-    const projectAction = { ...req.body, project_id: id };
-
-    if (!projectAction || Object.keys(projectAction).length === 0) {
-        res.status(400).json({ errorMessage: `Missing action data` });
-    } else if (!projectAction.description || !projectAction.notes) {
-        res.status(400).json({
-            errorMessage: `Please include a description and notes`
-        });
-    } else if (projectAction.description.length > 128) {
-        res.status(400).json({
-            errorMessage: `Action description must be 128 characters or less`
-        });
-    } else {
-        actions
-            .insert(projectAction)
-            .then(resp => res.status(200).send(resp))
-            .catch(err =>
-                res.status(500).json({
-                    errorMessage: `Error creating new action for project ${id}`
-                })
-            );
-    }
-});
-
-server.put(
-    "/:id/actions/:action_id",
-    validateProjectId,
-    validateActionId,
-    (req, res) => {
-        const { id, action_id } = req.params;
-
-        const updatedAction = req.body;
-
-        if (
-            updatedAction.description &&
-            updatedAction.description.length > 128
-        ) {
-            res.status(400).json({
-                errorMessage: "Description must be 128 characters or less"
-            });
-        } else {
-            actions
-                .update(action_id, updatedAction)
-                .then(response => {
-                    response
-                        ? res.status(200).send(response)
-                        : res.status(404).json({
-                              errorMessage: `Action with id ${action_id} does not exist`
-                          });
-                })
-                .catch(err =>
-                    res.status(500).json({
-                        errorMessage: `Error updating action ${action_id}`
-                    })
-                );
-        }
-    }
-);
-
-server.delete(
-    "/:id/actions/:action_id",
-    validateProjectId,
-    validateActionId,
-    (req, res) => {
-        const { action_id } = req.params;
-
-        actions
-            .remove(action_id)
-            .then(resp => {
-                resp > 0
-                    ? res.status(200).json({
-                          message: `Action ${action_id} was successfully delete`
-                      })
-                    : res.status(400).json({
-                          errorMessage: `No action with id ${action_id} was found`
-                      });
-            })
-            .catch(err =>
-                res
-                    .status(500)
-                    .json({
-                        errorMessage: `Error deleting action ${action_id}`
-                    })
-            );
-    }
-);
 
 server.listen(port, () => console.log(`Server listening on port ${port}`));
